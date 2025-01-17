@@ -1,16 +1,32 @@
+import Blog from '../models/blogModel.js';
 import {
   createBlogService,
   deleteBlogService,
-  getAllBlogsService,
   getBlogByIdService,
   updateBlogService
 } from '../services/blogService.js';
 
-// Example controllers/userController.js
 const getAllBlogs = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const parsedLimit = parseInt(limit);
   try {
-    const resp = await getAllBlogsService();
-    res.json({ status: 200, data: resp });
+    const resp = await Blog.find()
+      .limit(parsedLimit)
+      .skip((page - 1) * parsedLimit);
+    const totalBlogs = await Blog.countDocuments();
+    if (!resp || resp.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'No blogs found'
+      });
+    }
+    res.json({
+      status: 200,
+      data: resp,
+      totalPages: Math.ceil(totalBlogs / parsedLimit),
+      currentPage: parseInt(page),
+      totalBlogs,
+    });
   } catch (error) {
     res.json({ ...error });
   }

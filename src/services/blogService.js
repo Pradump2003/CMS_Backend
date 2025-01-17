@@ -1,7 +1,7 @@
 import Blog from '../models/blogModel.js';
 // Fetch all blogs
 export const getAllBlogsService = async () => {
-  return await Blog.find({});
+  return await Blog.find();
 };
 
 // Fetch a single blog by ID
