@@ -7,12 +7,23 @@ import {
 } from '../services/blogService.js';
 
 const getAllBlogs = async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, search } = req.query;
   const parsedLimit = parseInt(limit);
   try {
-    const resp = await Blog.find()
+    const query = {};
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } }, // Case-insensitive search in title
+        { content: { $regex: search, $options: 'i' } }, // Case-insensitive search in content
+        { writer: { $regex: search, $options: 'i' } }, // Case-insensitive search in writer
+        { tags: { $regex: search, $options: 'i' } } // Case-insensitive search in tags
+      ];
+    }
+
+    const resp = await Blog.find(query)
       .limit(parsedLimit)
-      .skip((page - 1) * parsedLimit);
+      .skip((page - 1) * parsedLimit)
+      .sort({ createdAt: -1 });
     const totalBlogs = await Blog.countDocuments();
     if (!resp || resp.length === 0) {
       return res.status(404).json({
@@ -25,7 +36,7 @@ const getAllBlogs = async (req, res) => {
       data: resp,
       totalPages: Math.ceil(totalBlogs / parsedLimit),
       currentPage: parseInt(page),
-      totalBlogs,
+      totalBlogs
     });
   } catch (error) {
     res.json({ ...error });

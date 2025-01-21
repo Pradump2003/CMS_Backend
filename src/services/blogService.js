@@ -4,6 +4,7 @@ export const getAllBlogsService = async () => {
   return await Blog.find();
 };
 
+
 // Fetch a single blog by ID
 export const getBlogByIdService = async (id) => {
   return await Blog.findById(id);
