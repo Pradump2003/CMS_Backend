@@ -7,10 +7,19 @@ import {
 } from '../services/blogService.js';
 
 const getAllBlogs = async (req, res) => {
-  const { page = 1, limit = 10, search } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    sortField = 'createdAt',
+    sortOrder = 'desc',
+    filters
+  } = req.query;
   const parsedLimit = parseInt(limit);
+
   try {
     const query = {};
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } }, // Case-insensitive search in title
@@ -20,17 +29,29 @@ const getAllBlogs = async (req, res) => {
       ];
     }
 
+    if (filters) {
+      const parsedFilters = JSON.parse(filters);
+      for (const [key, value] of Object.entries(parsedFilters)) {
+        query[key] = value;
+      }
+    }
+
+    const sort = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+
     const resp = await Blog.find(query)
       .limit(parsedLimit)
       .skip((page - 1) * parsedLimit)
-      .sort({ createdAt: -1 });
+      .sort(sort);
+
     const totalBlogs = await Blog.countDocuments();
+
     if (!resp || resp.length === 0) {
       return res.status(404).json({
         status: 404,
         message: 'No blogs found'
       });
     }
+
     res.json({
       status: 200,
       data: resp,
